@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="shortcut icon" href="http://placehold.it/16x16&amp;text=HI">
+
+    <title>Yet Another Bootstrap Bootstrap</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/basic.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc2/css/bootstrap.min.css" rel="stylesheet">
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/dropzone/3.7.1/dropzone.min.js"></script>
+<script>
+$(function(){
+    $('body').on('click', 'ul.venues li' ,function(){
+        var tag = $(this).closest('.tag')
+        tag.find('.selected_venue').html($(this).html());
+        data = $(this).data();
+        var button = '<a href="" style="background-image:url(https://playfoursquare.s3.amazonaws.com/press/logo/checkinon-black.png);display:block; width:150px;height:24px;"></a>';
+        replaced = $('.venues').replaceWith(button);
+        var a = tag.find('a:first');
+        a.data('timestamp', data.timestamp);
+        a.data('venueid', data.venueid);
+        console.log(a);
+        tag.find('a:first').click(function(){
+            console.log($(this).data('timestamp'));
+            $.getJSON('/check_in', {
+                'venueid':$(this).data('venueid'), 
+                'timestamp':$(this).data('timestamp')
+                }, function(response){
+                if(response.notifications)
+                {
+                    tag.find('a:first').replaceWith('<h4>Congrats you have checked in!</h4>');
+                }
+                console.log(response);
+            });
+            return false;
+        });
+        
+    });
+});
+
+// Our very special jQuery JSON fucntion call to Flickr, gets details
+// of the most recent 20 images
+
+$.getJSON("http://api.flickr.com/services/feeds/groups_pool.gne?id=41425956@N00&&format=json&jsoncallback=?", displayImages);
+
+    function displayImages(data) {
+
+    // Start putting together the HTML string
+    
+    // Now start cycling through our array of Flickr photo details
+    $.each(data.items, function(i,item){
+    
+        var htmlString = "";
+        if(i>90) return false;
+       
+        // I only want the ickle square thumbnails
+        var sourceSquare = (item.media.m)//.replace("_m.jpg", "_s.jpg");
+        
+        // Here's where we piece together the HTML
+        htmlString += '<li><a href="' + item.link + '" target="_blank">';
+        htmlString += '<img title="' + item.title + '" src="' + sourceSquare;
+        htmlString += '" alt="'; htmlString += item.title + '" />';
+        htmlString += '</a></li>';
+         if(i % 3 == 0){
+            $('#images').append(htmlString);
+            return true;
+        }
+        $('#images_2').append(htmlString);
+    
+    });
+    
+
+    
+    // Close down the JSON function call
+Dropzone.instances[0].on('success',function(one,two){ 
+    $.getJSON('/exif',{'file':one.name},function(response){
+        d = new Date(response.date * 1000);
+        console.log(d);
+        console.log(d.getFullYear());
+        var venues = $('<div class="tag"><h4>On '+ d.getDate() + '/'+ d.getMonth() + '/'+ d.getFullYear() +     ', check me in at <span class="selected_venue"></span></h4><ul class="venues"></ul></div>');
+        $.each(response.venues,function(i, venue){
+            $('<li data-venueid='+venue.id+' data-timestamp='+ response.date+'><span class="checkin">'+'</span><strong>'+ venue.name + ' </strong> ' + (venue.location.city || '') + ' '  + (venue.location.state || '')+ ' ' + (venue.location.cc || '') +'</li>').appendTo(venues.find('ul:first'));
+        });
+        venues.appendTo('form:first');
+        
+    });
+ });
+}
+</script>
+    <style>
+      .checkin{
+        color:#ffcb00;
+        width:20px;
+        display:inline-block;
+
+      }
+      .dropzone{
+        min-height:100px;
+      }
+      body {
+        background-color: #0cbadf;
+        
+      }
+      html body .container{
+        background-color:white; 
+        width:100%;
+        max-width:100%;
+        padding: 0 20% 5% 20% ;
+        color:#4d4d4d;
+      }
+
+      .tag ul li:hover {
+        background-color:rgba(0,0,0,0.25);
+        color:white;
+        cursor:pointer;
+      }
+      .tag ul li {
+        list-style-type:none;
+      }
+        div.tag{
+            float:right;
+            width:80%;
+            clear:right;
+        }
+
+      ul.venues{
+        padding-left:0px;
+        font-size:110%;
+        height:120px;
+        overflow:auto;
+        max-height:120px;
+      }
+      .venues{
+        border:solid 1px #acacac;
+        
+      }
+      .holder { width:100%;overflow:hidden;height:180px;box-shadow:0px 0 20px rgba(0,0,0,.2) }
+      #images, #images_2 { height:180px; overflow:hidden; width:2000px;}
+      #images_2 li,#images li { list-style-type:none; float:left; max-height:180px; overflow:hidden}
+      #images li img, #images_2 li img { height:240px}
+    </style>
+  </head>
+
+  <body>
+        <div class="holder">
+            <div id="images"></div>
+        </div>
+
+    <div class="container">
+          <h1>Time Traveller <img src="https://playfoursquare.s3.amazonaws.com/press/logo/poweredByFoursquare_36x36.png" /></h1>
+
+          <p>Ever want to check in to Foursquare but the 3G doesn't work well or you don't have wifi, now you can with Time Traveller</p>
+
+          <p>Just use the photos from your exotic location and use them to give you the time and location of your check-in</p>
+
+
+        <form enctype="multipart/form-data" action="/image_upload" method="post" class="dropzone" >
+        </form>
+
+
+          </h3>
+
+    </div> <!-- /container -->
+        <div class="holder">
+            <div id="images_2"></div>
+        </div>
+
+
+
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0-rc2/js/bootstrap.min.js"></script>
+  </body>
+</html>
